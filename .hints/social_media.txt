@@ -1,0 +1,78 @@
+social_media_api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                  # FastAPI app creation
+│   ├── core/                    # Configuration, DB init, security
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── security.py
+│   ├── models/                  # SQLAlchemy ORM models
+│   │   ├── user.py
+│   │   ├── post.py
+│   │   └── __init__.py
+│   ├── schemas/                 # Pydantic schemas
+│   │   ├── user.py
+│   │   ├── post.py
+│   │   └── __init__.py
+│   ├── crud/                    # DB interaction logic
+│   │   ├── user.py
+│   │   ├── post.py
+│   │   └── __init__.py
+│   ├── api/                     # API routers
+│   │   ├── deps.py              # Common dependencies
+│   │   ├── v1/
+│   │   │   ├── routes_user.py
+│   │   │   ├── routes_post.py
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── services/                # Extra services (e.g. email, followers)
+│   │   ├── follow.py
+│   │   └── __init__.py
+│   ├── utils/                   # Utility functions/helpers
+│   │   └── jwt.py
+│   └── tests/                   # Pytest-based unit tests
+│       ├── conftest.py
+│       ├── test_users.py
+│       └── test_posts.py
+├── alembic/                     # DB migration directory
+│   └── versions/
+├── alembic.ini
+├── .env                         # Environment variables
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+
+
+Main Tech Stack
+FastAPI – API framework
+PostgreSQL – Database
+SQLAlchemy (async) – ORM
+Alembic – Migrations
+PyJWT – Auth
+Docker – Containerization
+Pytest – Testing
+
+
+from fastapi import FastAPI
+from app.core.config import settings
+from app.api.v1 import routes_user, routes_post
+
+app = FastAPI(title="Social Media Micro API")
+
+app.include_router(routes_user.router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(routes_post.router, prefix="/api/v1/posts", tags=["Posts"])
+
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up .env file
+cp .env.example .env
+
+# Run DB migrations
+alembic upgrade head
+
+# Start app
+uvicorn app.main:app --reload

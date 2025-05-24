@@ -1,0 +1,105 @@
+Here's a ready-to-go starter structure for a FastAPI Real-time Chat API, leveraging:
+
+WebSockets for real-time messaging
+JWT authentication
+SQLAlchemy (async) for user/message persistence
+Redis (optional) for pub-sub or message queueing
+Clean architecture for scalability
+
+
+fastapi_chat_api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── core/                  # Core config, db, security
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── dependencies.py
+│   │   ├── security.py
+│   │   └── websocket.py
+│   ├── models/                # SQLAlchemy models
+│   │   ├── user.py
+│   │   ├── message.py
+│   │   └── __init__.py
+│   ├── schemas/               # Pydantic schemas
+│   │   ├── user.py
+│   │   ├── message.py
+│   │   └── __init__.py
+│   ├── crud/                  # DB logic
+│   │   ├── user.py
+│   │   ├── message.py
+│   │   └── __init__.py
+│   ├── api/                   # API routes
+│   │   ├── v1/
+│   │   │   ├── routes_auth.py
+│   │   │   ├── routes_users.py
+│   │   │   ├── routes_chat.py         # WebSocket chat
+│   │   │   └── __init__.py
+│   │   └── __init__.py
+│   ├── services/              # Business logic
+│   │   └── chat_service.py
+│   ├── utils/                 # Utility functions
+│   │   ├── jwt.py
+│   │   └── __init__.py
+│   └── tests/                 # Test suite
+│       ├── test_auth.py
+│       ├── test_chat.py
+│       └── __init__.py
+├── alembic/
+│   └── versions/
+├── alembic.ini
+├── .env
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+
+🚀 Main Features
+Feature	Description
+Auth	Register/Login with JWT
+WebSocket Chat	Real-time messaging via FastAPI websockets
+Persistence	Messages stored in DB
+Redis (optional)	Broadcast to other workers or rooms
+Scalable	Clean architecture + async support
+Users	Basic user profile endpoints
+
+
+🔧 Tech Stack
+Component	Tech
+Backend	FastAPI
+ORM	SQLAlchemy (async)
+Auth	JWT + OAuth2Password
+Realtime	WebSocket
+Messaging	Redis Pub/Sub (optional)
+DB	PostgreSQL
+Migrations	Alembic
+Testing	Pytest + HTTPX
+Dockerized	Yes
+
+
+# app/api/v1/routes_chat.py
+from fastapi import APIRouter, WebSocket, Depends
+from app.core.websocket import manager
+from app.core.security import get_current_user_ws
+from app.schemas.user import UserOut
+
+router = APIRouter()
+
+@router.websocket("/ws/chat/{room_id}")
+async def chatroom_ws(websocket: WebSocket, room_id: str, user: UserOut = Depends(get_current_user_ws)):
+    await manager.connect(websocket, room_id, user.username)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(room_id, f"{user.username}: {data}")
+    except Exception:
+        await manager.disconnect(websocket, room_id)
+
+
+.env
+DATABASE_URL=postgresql+asyncpg://user:password@db/chat_db
+SECRET_KEY=supersecretkey
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REDIS_URL=redis://localhost_
+
