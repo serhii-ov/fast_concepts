@@ -1,0 +1,109 @@
+I have app/models/product.py based on SQLModel and app/schemes/product.py based on pydantic. 
+Explain such astructure.
+
+
+Great — this is a standard and very effective structure in FastAPI (and many modern web apps).
+Here's a breakdown of why you use models/ for SQLModel and schemas/ 
+(or schemes/ in your case) for Pydantic:
+
+✅ The Purpose of the Structure
+
+app/
+├── models/         ← SQLModel models (DB layer)
+│   └── product.py
+├── schemes/        ← Pydantic schemas (data validation/serialization layer)
+│   └── product.py
+You're separating responsibilities into clear layers:
+
+
+models/	Define database structure (tables)	SQLModel
+schemes/	Define request/response structure for API (validation & I/O)	Pydantic
+
+🧱 Why Separate SQLModel and Pydantic?
+1. Different Use Cases
+SQLModel is for talking to the database (CRUD).
+Pydantic is for serializing and validating data, especially:
+Incoming data from clients (requests)
+Outgoing data from your API (responses)
+
+2. Security
+In APIs, you never want to expose raw database models directly. For example:
+
+# SQLModel model
+class Product(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    price: float
+    secret_supplier_notes: Optional[str]
+
+You don’t want to expose secret_supplier_notes in API responses. 
+So you create a Pydantic schema:
+
+
+# Pydantic schema
+class ProductRead(BaseModel):
+    id: int
+    name: str
+    price: float
+
+3. Decoupling Logic
+This separation lets you:
+Reuse ProductRead in many endpoints
+Have fine-grained control over fields in request/response
+Change the database structure without breaking API contracts
+
+4. Custom Validation / Aliases
+Pydantic schemas let you:
+Add validation (min_length, gt, regex, etc.)
+Rename fields (alias="productName")
+Define nested models
+
+🔧 Example
+# models/product.py
+
+from sqlmodel import SQLModel, Field
+from typing import Optional
+
+class Product(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    description: Optional[str]
+    price: float
+
+# schemes/product.py
+from pydantic import BaseModel
+from typing import Optional
+
+class ProductCreate(BaseModel):
+    name: str
+    description: Optional[str]
+    price: float
+
+class ProductRead(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    price: float
+
+    class Config:
+        orm_mode = True
+
+Note the orm_mode = True → it tells FastAPI to read data 
+from SQLModel instances as if they were dicts.
+
+✅ Summary
+Layer	Module	Purpose
+Database	models/product.py	Models tied to the DB via SQLModel
+API	schemes/product.py	API-safe, validated data shapes via Pydantic
+
+This clean separation is:
+Scalable
+Secure
+Maintainable
+
+
+
+
+
+
+

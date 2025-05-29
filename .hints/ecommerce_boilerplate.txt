@@ -1,0 +1,133 @@
+ecommerce_project/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── product.py
+│   │   └── order.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── product.py
+│   │   └── order.py
+│   ├── crud/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── product.py
+│   │   └── order.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── deps.py
+│   │   ├── users.py
+│   │   ├── products.py
+│   │   └── orders.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   └── database.py
+│   └── utils/
+│       ├── __init__.py
+│       └── hashing.py
+├── requirements.txt
+└── alembic/  # For migrations
+
+# requirements.txt
+fastapi
+uvicorn
+sqlalchemy
+alembic
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic
+
+# app/main.py
+from fastapi import FastAPI
+from app.api import users, products, orders
+from app.core.database import Base, engine
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI()
+
+app.include_router(users.router, prefix="/users", tags=["Users"])
+app.include_router(products.router, prefix="/products", tags=["Products"])
+app.include_router(orders.router, prefix="/orders", tags=["Orders"])
+
+# app/core/database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./ecommerce.db"
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# app/core/security.py
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+
+# app/utils/hashing.py
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+def verify_password(plain: str, hashed: str):
+    return pwd_context.verify(plain, hashed)
+
+# app/models/user.py
+from sqlalchemy import Column, Integer, String
+from app.core.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+
+# app/schemas/user.py
+from pydantic import BaseModel, EmailStr
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+    class Config:
+        orm_mode = True
+
+# app/api/users.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.core.database import SessionLocal
+from app.schemas import user as schemas
+from app.models import user as models
+from app.utils.hashing import hash_password
+
+router = APIRouter()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.post("/", response_model=schemas.UserResponse)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    new_user = models.User(email=user.email, hashed_password=hash_password(user.password))
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user

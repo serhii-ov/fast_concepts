@@ -1,0 +1,85 @@
+For what principal to structure some object in fastapi scheme? 
+
+
+Great question. Structuring objects in FastAPI Pydantic schemas
+follows clear principles based on data flow, validation responsibilities, 
+and API boundaries.
+
+Here’s the core idea:
+In FastAPI, a Pydantic schema defines what data you accept, and what data you return.
+
+✅ Principles for Structuring Pydantic Schemas in FastAPI
+1. Reflect the Use Case
+Each schema should be shaped around a specific purpose:
+
+Schema Type	Purpose	Example
+Create	Incoming data to create a resource	-> UserCreate
+Update	Incoming data to update a resource (partial) -> UserUpdate
+Read / Out	Data sent back to the client	-> UserRead, UserOut
+InDB (optional)	Internal use, includes DB-only fields like id  -> 	UserInDB
+
+This ensures schemas are contextual and safe.
+
+2. Avoid Exposing Sensitive/Internal Fields
+Don’t return fields like password_hash, is_superuser, etc.
+Use dedicated response schemas that exclude them.
+
+# Good: Only what's safe to return
+class UserRead(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+
+3. Favor Composition (DRY)
+Avoid repeating field definitions by inheriting common fields.
+
+
+class BaseUser(BaseModel):
+    username: str
+    email: EmailStr
+
+class UserCreate(BaseUser):
+    password: str
+
+class UserRead(BaseUser):
+    id: int
+
+
+This makes your code:
+Cleaner
+Easier to maintain
+Aligned with OpenAPI spec
+
+4. Always Use orm_mode = True for Responses
+If you return SQLAlchemy/SQLModel instances, you must enable:
+
+class Config:
+    orm_mode = True
+
+This allows FastAPI to convert ORM objects to JSON using Pydantic.
+
+5. Be Explicit With Field Types
+Using correct types helps with:
+Input validation
+
+from pydantic import EmailStr, conint
+from typing import Optional
+
+age: conint(ge=18, le=100)
+email: EmailStr
+
+6. Use Optional[...] Only When It's Optional
+Pydantic uses type hints to determine if a field is required:
+
+# Required field
+name: str
+# Optional field
+description: Optional[str] = None
+
+🧠 Summary
+To structure a FastAPI schema:
+✅ Make a separate schema per data flow direction (create, read, update)
+✅ Use inheritance to reuse shared fields
+✅ Avoid returning internal or sensitive data
+✅ Use orm_mode = True for response schemas
+✅ Be precise and intentional with field types and optionality
