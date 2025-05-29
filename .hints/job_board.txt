@@ -40,16 +40,12 @@ job_board_api/
 └── README.md
 
 
-Here's a ready-to-go folder structure for a FastAPI Job Board API project. It uses best practices including:
+Here's a ready-to-go folder structure for a FastAPI Job Board API project. 
+It uses best practices including:
 
 Separation of concerns (models, schemas, CRUD, routes).
-
 Dependency injection via deps.py.
-
 Authentication logic in a reusable auth/ module.
-
 Alembic for migrations.
-
 Docker for containerization.
-
 Environment configuration via .env.

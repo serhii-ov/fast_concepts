@@ -1,19 +1,14 @@
-Here’s a ready-to-go starter structure for a FastAPI E-commerce Backend, using clean architecture, JWT authentication, 
-SQLAlchemy (async), and modular app design — perfect for real-world use and portfolio showcasing.
+Here’s a ready-to-go starter structure for a FastAPI E-commerce Backend, 
+using clean architecture, JWT authentication, SQLAlchemy (async), 
+and modular app design — perfect for real-world use and portfolio showcasing.
 
 ✅ Core Features
 Modular app design with separation of concerns
-
 User registration, login with JWT
-
 Product catalog
-
 Cart and order management
-
 Admin panel basics (via roles or flags)
-
 Async SQLAlchemy + Alembic for migrations
-
 Dockerized, .env based configuration
 
 
