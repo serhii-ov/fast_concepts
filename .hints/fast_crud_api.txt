@@ -1,0 +1,72 @@
+You're absolutely right to notice what looks like duplication — but in fact, 
+this pattern is a deliberate separation of concerns, which is a best practice 
+in FastAPI (and web frameworks generally). 
+Let's break it down and explain why this structure is used and why it’s good design.
+
+🧩 Code Structure Breakdown
+1. app/crud/product.py
+This is the data-access layer (aka CRUD layer). It only interacts with the database.
+
+# app/crud/product.py
+def get_product(db: Session, product_id: int) -> Optional[Product]:
+    return db.get(Product, product_id)
+
+📌 Purpose:
+Encapsulate how data is fetched. This layer hides raw DB logic from the rest of your app, 
+making it easier to test and refactor.
+
+
+2. app/api/v1/routes/product.py
+This is the API layer (routing + response handling).
+
+@router.get("/{product_id}", response_model=ProductRead)
+def read(product_id: int, db: Session = Depends(get_session)):
+    product = get_product(db, product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Product not found",
+        )
+    return product
+
+📌 Purpose:
+Responsible for:
+Request parsing
+Dependency injection (e.g., db)
+HTTP-specific behavior (like status codes and error handling)
+Response shaping (response_model=ProductRead)
+
+✅ Why This Is Good Design
+🧱 Separation of Concerns
+API Layer: knows nothing about how DB works.
+CRUD Layer: knows nothing about HTTP or request/response lifecycles.
+
+This makes it easier to maintain, test, and scale.
+
+🔄 Code Reuse
+Imagine you need to fetch a product in:
+A REST endpoint
+A background task
+A CLI tool
+Another internal service
+
+You reuse get_product() from crud/product.py everywhere 
+— no duplication of DB logic.
+
+🧪 Testability
+You can unit test get_product() with a mock database.
+You can unit test the route by mocking get_product() and asserting HTTP behavior.
+This leads to a clean test structure.
+
+🧠 Summary
+Although it looks repetitive:
+
+Layer	          ->  Responsibility
+crud/product.py	->    Pure DB logic (reusable)
+routes/product.py ->  HTTP interface (status codes, validation, schemas)
+
+This design follows domain-driven design principles and improves:
+Maintainability
+Scalability
+Testing
+Reusability

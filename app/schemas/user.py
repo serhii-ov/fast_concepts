@@ -4,7 +4,6 @@ from typing import Optional, Literal
 
 
 # Role Support
-
 class Role(str):
     """Class represents enum-like roles for users."""
     ADMIN = "admin"
@@ -13,7 +12,6 @@ class Role(str):
 
 
 # Base + Creation + Update Schemas
-
 class BaseUser(BaseModel):
     """Class represents base fields shared accross schemas."""
     username: str = Field(..., min_length=3, max_length=50)
@@ -37,7 +35,6 @@ class UserUpdate(BaseModel):
 
 
 # DB + Response Schemas
-
 class UserInDB(BaseUser):
     """Schema for internal DB representation (e.g., including hashed password)."""
     id: int
@@ -60,7 +57,6 @@ class UserResponse(BaseUser):
 
 
 # Login & Token Support
-
 class UserLogin(BaseModel):
     """Used when logging in."""
     username: str

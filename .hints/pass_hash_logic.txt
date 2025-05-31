@@ -1,0 +1,57 @@
+Yes, adding password hashing logic in app/core/security.py is a good idea 
+and a best practice for keeping all your authentication-related utilities 
+(token handling, password hashing, verification) in a single cohesive module.
+
+✅ Why put password hashing in app/core/security.py?
+Separation of concerns: Keeps security-related logic isolated.
+Reusability: You can use the hashing functions across CRUD, auth routes, background jobs, etc.
+
+Maintainability: Easy to swap out the hashing algorithm or config from one place.
+✅ What to add
+You can extend your app/core/security.py with:
+
+from passlib.context import CryptContext
+
+# bcrypt is the most commonly used algorithm
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    """Hash a plain-text password."""
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain-text password against the hashed one."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+========================================================================
+✅ Final structure of security.py
+
+from datetime import datetime, timedelta
+from typing import Optional
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+
+# Configuration (you might want to import from app/core/config.py or use dotenv)
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict, secret_key: str, expire_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.now() + (expire_delta or timedelta(minutes=10))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
+
+def verify_token(token: str):
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None

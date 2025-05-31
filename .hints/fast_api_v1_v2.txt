@@ -1,0 +1,81 @@
+what is the reason of making api/v1 and api/v2?
+
+
+Great question — adding api/v1, api/v2, etc. in a FastAPI project 
+(or any web API) is a versioning strategy, and it serves some very practical 
+and essential purposes as your application grows.
+
+🔍 Why Use Versioned API Paths (e.g. /api/v1, /api/v2)?
+1. Backward Compatibility
+When you introduce breaking changes to the API 
+(e.g., different request formats, new required fields, removed fields), 
+older clients can continue using the /v1 endpoints, while newer clients use /v2.
+
+✅ Old apps keep working.
+✅ New features evolve independently.
+
+2. Controlled Deprecation
+You can gradually phase out old versions without breaking production users instantly.
+
+/api/v1/products  ← older, stable version
+/api/v2/products  ← new version with breaking changes
+
+You can:
+Keep /v1 live
+Announce /v1 deprecation in 6 months
+Encourage migration to /v2
+
+3. Multiple Clients
+If you support:
+Mobile apps
+Web dashboards
+External integrations (like partners or 3rd parties)
+Each might depend on different API versions. Versioning allows you to support 
+multiple clients with different expectations at the same time.
+
+4. Cleaner Code and Deployment Strategy
+In your FastAPI project structure:
+
+app/
+  api/
+    v1/
+      routes/
+      schemas/
+      crud/
+    v2/
+      routes/
+      schemas/
+      crud/
+
+You can:
+Keep versions isolated
+Safely refactor one version without touching others
+
+5. Industry Standard Practice
+
+Versioned APIs are a common best practice in:
+REST APIs (like Stripe, GitHub, Twitter)
+OpenAPI/Swagger tools (e.g. FastAPI auto-docs)
+Microservice architectures
+
+It’s about predictability, flexibility, and robust design.
+
+🔧 FastAPI Example
+
+# main.py
+from fastapi import FastAPI
+from app.api.v1.routes import products as products_v1
+from app.api.v2.routes import products as products_v2
+
+app = FastAPI()
+
+app.include_router(products_v1.router, prefix="/api/v1/products", tags=["v1-products"])
+app.include_router(products_v2.router, prefix="/api/v2/products", tags=["v2-products"])
+
+✅ Summary
+Benefit	Description
+Compatibility	Don’t break old clients with new API logic
+Flexibility	Let new clients use improved/experimental features
+Safe refactoring	Separate versions reduce side effects
+User trust	Shows maturity and stability in your API design
+Maintenance	Easier to track and maintain different API generations
