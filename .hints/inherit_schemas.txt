@@ -1,0 +1,40 @@
+Why OrderUpdate inherited from BaseModel, 
+when other classes inherited from OrderBase?
+
+
+In your order schema design:
+
+class OrderBase(BaseModel):
+    total_amount: float = Field(..., gt=0)
+    status: Literal["pending", "paid", "shipped", "cancelled"] = "pending"
+
+
+✅ Why OrderCreate and OrderRead inherit from OrderBase:
+These use most or all fields from the base — with strong typing and required fields.
+
+class OrderCreate(OrderBase):
+    user_id: int
+This makes sense: OrderCreate needs total_amount and status from OrderBase, and adds user_id.
+
+❓ Why OrderUpdate does not inherit from OrderBase:
+Because OrderUpdate is used for partial updates (like a PATCH request), fields should be:
+optional
+not required
+not tightly validated with default values
+
+If OrderUpdate inherited from OrderBase, 
+it would require all fields defined with ... (like total_amount).
+That's why it's correct to define OrderUpdate like this:
+
+class OrderUpdate(BaseModel):
+    status: Optional[Literal["pending", "paid", "shipped", "cancelled"]] = None
+    total_amount: Optional[float] = Field(None, gt=0)
+This allows you to pass only the fields you want to update, 
+without needing to supply everything.
+
+Summary:
+Schema	        Inherits from	Fields required?	Use case
+OrderBase	    BaseModel	    Yes	                Shared structure
+OrderCreate	    OrderBase	    Yes	                Creating new orders
+OrderRead	    OrderBase	    Yes	                API responses
+OrderUpdate	    BaseModel	    No	                Partial update (PATCH)
