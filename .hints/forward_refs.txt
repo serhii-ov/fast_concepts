@@ -1,0 +1,49 @@
+There are two standard ways to handle forward references in Python 
+when using SQLModel, Pydantic, or general type annotations:
+
+✅ Option 1: Use from __future__ import annotations (Recommended in modern Python ≥3.7+)
+    This postpones the evaluation of all type hints, 
+    so you don't need to quote forward references.
+    Example:
+
+    from __future__ import annotations  # Must be at the top of the file
+    from typing import List, Optional
+    from sqlmodel import SQLModel, Field, Relationship
+
+    class Order(SQLModel, table=True):
+        id: Optional[int] = Field(default=None, primary_key=True)
+        items: List[OrderItem] = Relationship(back_populates="order")
+
+    class OrderItem(SQLModel, table=True):
+        id: Optional[int] = Field(default=None, primary_key=True)
+        order_id: int = Field(foreign_key="order.id")
+        order: Order = Relationship(back_populates="items")
+
+✅ Clean and avoids quoting — but you must place the 
+    < from __future__ import annotations >
+    at the very top of the file (above all other imports).
+
+✅ Option 2: Use TYPE_CHECKING to avoid circular imports
+    When your models are split across files and might import each other, 
+    use this:
+
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from .order import Order  # adjust path depending on your structure
+
+    Then in the model:
+    order: Optional["Order"] = Relationship(back_populates="items")
+
+    This tells the type checker what's going on, without actually 
+    importing at runtime, avoiding circular imports.
+
+🚀 Summary
+Method	                        Pros	                    When to Use
+from __future__ import 	        Cleanest, no quotes needed	For Python 3.7+ projects
+annotations
+TYPE_CHECKING guard + quotes	Safe with circular imports	When models span across 
+                                                            files/modules
+
+🔧 Best Practice (modern projects):
+    Use from __future__ import annotations in all model files.
+    Use TYPE_CHECKING only when models reference each other across modules.

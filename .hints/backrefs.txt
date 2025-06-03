@@ -1,0 +1,98 @@
+Those optional backrefs (backward relationships) 
+commented out in your OrderItem model:
+
+# order: Optional["Order"] = Relationship(back_populates="items")
+# product: Optional["Product"] = Relationship(back_populates="order_items")
+...are used for navigating relationships in both directions.
+
+
+🔁 What Backrefs Do
+    They allow SQLModel (and SQLAlchemy under the hood) to:
+    Automatically fetch related Order or Product instances from an OrderItem instance.
+    Enable cascade loading, joins, and ORM conveniences like order.items or product.order_items.
+
+🧠 Without Backrefs
+    You can still query manually using order_id and product_id fields, but:
+
+    order_item = db.get(OrderItem, 1)
+    print(order_item.order)  # ❌ This won't work without the backrefs
+
+✅ With Backrefs
+    Assuming you define both ends of the relationship:
+
+    In OrderItem:
+    order: Optional["Order"] = Relationship(back_populates="items")
+    product: Optional["Product"] = Relationship(back_populates="order_items")
+
+    In Order:
+    items: List["OrderItem"] = Relationship(back_populates="order")
+
+    In Product:
+    order_items: List["OrderItem"] = Relationship(back_populates="product")
+
+    Now you can do:
+    order_item = db.get(OrderItem, 1)
+    print(order_item.order)  # ✅ Works
+
+    And:
+    order = db.get(Order, 1)
+    for item in order.items:
+        print(item.product)
+
+
+🧱 Summary
+    Feature	                    With Backrefs	    Without Backrefs
+    Navigate relationships	            ✅ Yes	    🚫 Manual only
+    Automatic joins (ORM)	            ✅	        🚫
+    order_item.order	                ✅	        🚫
+    Clean object graph access	        ✅	        🚫
+
+Use backrefs if your app needs bidirectional data access — especially for APIs 
+or admin panels that need to list relationships (e.g., showing all items in an order).
+
+===========================================================================
+items: List["OrderItem"] = Relationship(back_populates="order")      
+Is it necessary to embrace OrderItem in quotation marks?
+
+
+Yes, you must use quotation marks around "OrderItem" 
+in this context — and here's why:
+
+✅ Reason: Forward Reference
+    When you define:
+
+    items: List["OrderItem"] = Relationship(back_populates="order")
+    You're referring to OrderItem, which is not yet defined at the time Python parses this class. 
+
+    By quoting "OrderItem", you're telling Python:
+    "This is a reference to a class that will be defined later."
+    This is called a forward reference, and it's standard 
+    in type hinting when referencing classes not yet declared.
+
+🔥 Without Quotes
+    If you write:
+    items: List[OrderItem] = Relationship(back_populates="order")
+    And OrderItem hasn't been defined yet in the file 
+    (or hasn't been imported), Python will raise:
+
+    NameError: name 'OrderItem' is not defined
+
+🛠️ Best Practices
+    Always use quotes around class names in circular or forward relationships.
+    To enable forward references to work cleanly with Pydantic and SQLModel,
+    you may also need to add at the end of the file:
+
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        from app.models.order_item import OrderItem
+
+    This avoids circular imports at runtime but still allows editors 
+    and type checkers to know about the type.
+
+Summary
+    ✅ Use quotes for forward references:
+        items: List["OrderItem"]
+
+    🔁 And make sure to use back_populates symmetrically 
+    on both ends of the relationship.

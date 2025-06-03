@@ -1,5 +1,8 @@
-from sqlmodel import SQLModel, Field
-from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .order_item import OrderItem
 
 
 class Product(SQLModel):
@@ -10,3 +13,5 @@ class Product(SQLModel):
     description: Optional[str] = None
     price: float = Field(nullable=False)
     in_stock: int = Field(default=0)
+
+    order_item: List["OrderItem"] = Relationship(back_populates="product")

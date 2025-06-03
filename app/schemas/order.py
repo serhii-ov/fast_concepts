@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import datetime
+
+from app.schemas.order_item import OrderItemRead
 
 
 class OrderBase(BaseModel):
@@ -20,12 +22,13 @@ class OrderUpdate(BaseModel):
     status: Optional[Literal["pending", "paid", "shipped", "cancelled",]] = None
 
 
-class OrderRead(OrderBase):
+class OrderRead(BaseModel):
     """Class represents fields when returning to the client."""
     id: int
     user_id: int
     cerated_at: datetime
     updated_at: Optional[datetime] = None
+    items: Lis[OrderItemRead] = []
 
     class Config:
         orm_mode = True

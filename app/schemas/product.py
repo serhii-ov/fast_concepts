@@ -26,3 +26,12 @@ class ProductUpdate(BaseModel):
     description: Optional[str]
     price: Optional[float]
     in_stock: Optional[int]    
+
+
+class ProductNested(BaseModel):
+    id: int
+    name: str
+    price: float
+
+    class Config:
+        orm_mode = True
