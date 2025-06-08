@@ -3,7 +3,8 @@ from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 
 if TYPE_CHECKING:
-    from .order_item import OrderItem
+    from app.models.user import User
+    from app.models.order_item import OrderItem
 
 
 class Order(SQLModel):
@@ -15,4 +16,5 @@ class Order(SQLModel):
     created_at: datetime = Field(default_factory=datetime.now(),)
     updated_at: Optional[datetime] = Field(default=None)
 
-    item: List["OrderItem"] = Relationship(back_populates="order")
+    user: Optional["User"] = Relationship(back_populates="orders")
+    items: List["OrderItem"] = Relationship(back_populates="order")

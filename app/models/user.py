@@ -1,6 +1,9 @@
-from sqlmodel import SQLModel, Field
-from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, TYPE_CHECKING, List
 from datetime import datetime 
+
+if TYPE_CHECKING:
+    from app.models.order import Order
 
 
 class User(SQLModel, table=True):
@@ -14,3 +17,5 @@ class User(SQLModel, table=True):
     role: str = "customer"
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.now())
+
+    orders: List["Order"] = Relationship(back_populates="user")

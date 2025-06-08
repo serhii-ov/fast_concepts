@@ -1,7 +1,9 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
+from sqlmodel import select
 from typing import Optional, List
 
 from app.models.order import Order
+from app.models.order_item import OrderItem
 from app.schemas.order import OrderCreate, OrderUpdate
 
 
@@ -67,3 +69,13 @@ def delete_order(db: Session, order_id: int,) -> dict:
     db.commit()
 
     return {"ok": "Order deleted successfully."}
+
+
+def get_order_with_user_and_items(db: Session, order_id: int):
+    """Get order's with a user who ordered and items."""
+
+    statement = select(Order).where(Order.id==order_id).options(
+        selectinload(Order.user),
+        selectinload(Order.items).selectinload(OrderItem.product),
+    )
+    return db.exec(statement).first()

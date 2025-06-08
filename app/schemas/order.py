@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal, List
 from datetime import datetime
 
+from app.schemas.user import UserNested
 from app.schemas.order_item import OrderItemRead
 
 
@@ -26,9 +27,12 @@ class OrderRead(BaseModel):
     """Class represents fields when returning to the client."""
     id: int
     user_id: int
+    status: str
     cerated_at: datetime
     updated_at: Optional[datetime] = None
-    items: Lis[OrderItemRead] = []
+
+    user: UserNested
+    items: List[OrderItemRead] = []
 
     class Config:
         orm_mode = True

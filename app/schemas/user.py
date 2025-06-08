@@ -56,6 +56,17 @@ class UserResponse(BaseUser):
         orm_mode = True
 
 
+class UserNested(BaseModel):
+    """Used in order response reading"""
+    id: int
+    username: str
+    email: EmailStr
+    full_name: str | None = None
+
+    class Config:
+        orm_mode = True
+
+
 # Login & Token Support
 class UserLogin(BaseModel):
     """Used when logging in."""

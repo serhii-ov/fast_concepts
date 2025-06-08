@@ -1,0 +1,46 @@
+statement = (
+    select(Order)
+    .where(Order.id == order_id)
+    .options(
+        selectinload(Order.user),
+        selectinload(Order.items).selectinload(OrderItem.product)
+    )
+)
+
+✅ 1. select(Order)
+    This creates a SQL SELECT statement that targets the Order table/model.
+    It’s equivalent to SQL:
+    SELECT * FROM order WHERE ...
+
+✅ 2. .where(Order.id == order_id)
+    Adds a filter condition, so you're querying a single order by its ID.
+    It narrows the query down to just the order with a specific order_id.
+
+✅ 3. .options(...)
+    This is where the power of eager loading with selectinload comes in.
+    Eager loading helps preload related objects in a single query 
+    (or a minimal number of queries), reducing unnecessary round-trips to DB.
+
+    ▶️ selectinload(Order.user)
+        Tells SQLAlchemy/SQLModel to eagerly load the user related to the order.
+
+        Instead of accessing order.user later and triggering a lazy query, 
+        it fetches all needed users using a separate SELECT ... WHERE id IN (...) query.
+
+    ▶️ selectinload(Order.items).selectinload(OrderItem.product)
+        First, eagerly loads items related to the order (OrderItem records).
+        Then, eagerly loads the product related to each OrderItem.
+        This ensures that order.items[i].product is already fetched without triggering N additional queries.
+
+        This avoids the N+1 problem:
+        Without this, if your order has 10 items, accessing each product triggers 10 extra queries.
+        With selectinload, only 2 extra queries are made — one for all items, one for all products.
+
+
+🧠 Summary
+    This code:
+    Selects a single Order by id
+    Loads its related User
+    Loads its related OrderItem
+    Loads the Product for each OrderItem
+    All in 1 + N (max 2-3 total) queries, instead of dozens.
